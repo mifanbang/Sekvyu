@@ -1,0 +1,3 @@
+[submodule "Extract7z"]
+	path = Extract7z
+	url = https://github.com/mifanbang/Extract7z.git
