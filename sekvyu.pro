@@ -25,7 +25,7 @@ else {
 
 # headers/libraries
 INCLUDEPATH += "./extract7z/include/"
-LIBS += OleAut32.lib User32.lib "extract7z/bin/$${MY_BUILD_ARCH}/$${MY_BUILD_CONFIG}/extract7z.lib"
+LIBS += OleAut32.lib User32.lib Advapi32.lib "extract7z/bin/$${MY_BUILD_ARCH}/$${MY_BUILD_CONFIG}/extract7z.lib"
 
 # output/intermediate folders
 DESTDIR = build/bin/$${MY_BUILD_CONFIG}

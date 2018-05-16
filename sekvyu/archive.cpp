@@ -16,11 +16,35 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define NOMINMAX
+
 #include "archive.h"
+
+#include <windows.h>
 
 #include <QFileInfo>
 
 #include <Extractor7Z.h>
+
+
+
+namespace {
+
+
+bool SetWorkingSetSizeHint(size_t sizeHint)
+{
+	HANDLE hProc = GetCurrentProcess();
+	size_t minSize, maxSize;
+	GetProcessWorkingSetSize(hProc, &minSize, &maxSize);
+
+	if (minSize < sizeHint)
+		return SetProcessWorkingSetSize(hProc, sizeHint, std::max(sizeHint, maxSize)) != FALSE;
+	else
+		return true;  // no need to expand
+}
+
+
+}  // unnamed namespace
 
 
 
@@ -39,7 +63,15 @@ Archive::OpenResult Archive::Open(const QString& path, Password& password)
 	else if (!Extractor7Z::CheckLibrary())
 		return OpenResult::DllNotFound;
 
-	auto newArchive = Extractor7Z::ExtractFrom(reinterpret_cast<const wchar_t*>(path.utf16()), password);
+	auto filePath = reinterpret_cast<const wchar_t*>(path.utf16());
+	size_t uncompressedSize;
+	Extractor7Z::GetUncompressedSize(filePath, &password, uncompressedSize);
+	SetWorkingSetSizeHint(uncompressedSize + 1024 * 1024 * 100);  // +100MB for all other things in the process
+
+	Extractor7Z::ExtractOptions options;
+	options.passwd = &password;
+	options.isSecrecy = true;
+	auto newArchive = Extractor7Z::ExtractFrom(filePath, options);
 	if (!newArchive)
 		return OpenResult::ExtractionError;
 
