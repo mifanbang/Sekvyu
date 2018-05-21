@@ -11,7 +11,7 @@ Pre-built executables can be found in the [Releases page](https://github.com/mif
 - Support of encrypted archives.
 - Images inside an archive are extracted only to the memory and therefore, with a good chance, leave no trace on your disk\*.
 
-\*: The operating system may move data from RAM to disk to free up some of the RAM space (see [Paging](https://en.wikipedia.org/wiki/Paging)). This happens more frequently as your free RAM space drops. It is a system behaviour that user mode applications have very limited control of, and thus this software cannot guarantee that your decompressed data will never be written onto the disk.
+\*: The operating system may move data from RAM to disk to free up some of the RAM space (see [Paging](https://en.wikipedia.org/wiki/Paging)). Sekvyu calls Windows API `VirtualLock()` to request keeping crucial memory from being swapped out, but it's up to Windows to decide, based on many runtime factors, whether to comply. Thus this software cannot guarantee that your decompressed data will never be written onto the disk.
 
 ## Build Instructions
 
@@ -24,7 +24,7 @@ There are some prerequisites for building from the source code:
 After you have them, it's pretty simple:
 
 1. Extract either "7-zip Source code" or "LZMA SDK" into the folder `extract7z/external/7zip/` so that the following path can be accessed: `extract7z/external/7zip/CPP/`.
-2. Open `sekvyu.pro` with Qt Designer and build with mkspec `win32-mscv`.
+2. Open `sekvyu.pro` with Qt Designer and build with mkspec `win32-msvc`.
 
 
 ## Copyright
