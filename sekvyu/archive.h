@@ -44,12 +44,14 @@ public:
 	Archive();
 
 	OpenResult Open(const QString& path, Password& password);
+	bool Save(size_t index, const QString& path);
 
 	inline FileArchive& GetContent()		{ return const_cast<FileArchive&>(reinterpret_cast<const Archive*>(this)->GetContent()); }
 	const FileArchive& GetContent() const   { return *m_content; }
 	inline size_t GetFileCount() const	  { return m_content->size(); }
 	QString GetName() const;
 	QString GetPath() const;
+	QString GetLastSavedDir() const;
 
 	template <typename FuncType>
 	void Filter(const FuncType& func)
@@ -67,6 +69,7 @@ private:
 	QString m_name;
 	QString m_path;
 	std::shared_ptr<FileArchive> m_content;
+	QString m_lastSavedDir;
 };
 
 

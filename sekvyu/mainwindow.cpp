@@ -185,7 +185,7 @@ void MainWindow::askOpenFile()
 
 void MainWindow::askImageIndex()
 {
-	if (!m_archive)
+	if (!m_archive || m_archive->GetFileCount() == 0)
 		return;
 
 	int numImage = Clamp(static_cast<int>(m_archive->GetFileCount()), 0, std::numeric_limits<int>::max());
@@ -212,12 +212,15 @@ void MainWindow::askImageIndex()
 
 void MainWindow::loadArchive(const QString& filePath)
 {
+	if (m_archive && m_archive->GetPath() == filePath)
+		return;
+
+	// extraction
 	Password password( [this](std::wstring& outPasswd) -> bool {
 		auto passwd = QInputDialog::getText(this, "Password", "Enter Password", QLineEdit::Password);
 		outPasswd = reinterpret_cast<const wchar_t*>(passwd.utf16());
 		return true;  // never ask again
 	} );
-
 	auto newArchive = std::make_shared<Archive>();
 	auto result = newArchive->Open(filePath, password);
 	if (result != Archive::OpenResult::Success) {
@@ -225,11 +228,11 @@ void MainWindow::loadArchive(const QString& filePath)
 		return;
 	}
 
+	// filter based on file type
 	newArchive->Filter( [](const FileRecord& frec) -> bool {
 		auto fileSize = frec.data->GetSize();
 		if (fileSize == 0)
 			return false;
-
 		auto fileType = FileFormat::GetType(frec.data->GetData(), fileSize);
 		return fileType == FileFormat::Type::Jpeg || fileType == FileFormat::Type::Png;
 	} );
@@ -265,18 +268,14 @@ bool MainWindow::saveCurrentImg()
 
 	auto currIndex = m_ui->imageView->getCurrentIndex();
 	const auto& fileRecord = m_archive->GetContent().at(currIndex);
-	auto inArchiveName = QString::fromUtf16(reinterpret_cast<const ushort*>(fileRecord.name.c_str()));
-	auto defaultName = QFileInfo(inArchiveName).fileName();
-	auto filePath = QFileDialog::getSaveFileName(this, "Save Image", defaultName);
 
+	auto&& inArchiveName = QString::fromUtf16(reinterpret_cast<const ushort*>(fileRecord.name.c_str()));
+	auto&& defaultName = QFileInfo(inArchiveName).fileName();
+	auto&& filePath = QFileDialog::getSaveFileName(this, "Save Image", m_archive->GetLastSavedDir() + defaultName);
 	if (filePath.length() == 0)
 		return false;
 
-	QFile ourFile(filePath);
-	ourFile.open(QIODevice::WriteOnly);
-	auto sizeWritten = ourFile.write(reinterpret_cast<const char*>(fileRecord.data->GetData()), fileRecord.data->GetSize());
-	ourFile.close();
-	return sizeWritten == fileRecord.data->GetSize();
+	return m_archive->Save(currIndex, filePath);
 }
 
 

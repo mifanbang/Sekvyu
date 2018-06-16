@@ -25,6 +25,7 @@
 #include <QFileInfo>
 
 #include <Extractor7Z.h>
+#include <Buffer.h>
 
 
 
@@ -52,6 +53,7 @@ Archive::Archive()
 	: m_name()
 	, m_path()
 	, m_content(new FileArchive)  // always allocate an empty one
+	, m_lastSavedDir()
 {
 }
 
@@ -75,11 +77,30 @@ Archive::OpenResult Archive::Open(const QString& path, Password& password)
 	if (!newArchive)
 		return OpenResult::ExtractionError;
 
-	m_name = QFileInfo(path).fileName();
+	const auto& fileInfo = QFileInfo(path);
+	m_name = fileInfo.fileName();
 	m_path = path;
 	m_content = newArchive;
+	m_lastSavedDir = fileInfo.absolutePath() + "/";
 
 	return OpenResult::Success;
+}
+
+
+bool Archive::Save(size_t index, const QString& path)
+{
+	if (index >= m_content->size())
+		return false;
+
+	const auto& fileBuffer = m_content->at(index).data;
+	QFile ourFile(path);
+	if (!ourFile.open(QIODevice::WriteOnly))
+		return false;
+	auto sizeWritten = ourFile.write(reinterpret_cast<const char*>(fileBuffer->GetData()), fileBuffer->GetSize());
+	ourFile.close();
+
+	m_lastSavedDir = QFileInfo(ourFile).absolutePath() + "/";
+	return sizeWritten == fileBuffer->GetSize();
 }
 
 
@@ -93,4 +114,8 @@ QString Archive::GetPath() const
 	return m_path;
 }
 
+QString Archive::GetLastSavedDir() const
+{
+	return m_lastSavedDir;
+}
 
